@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase, sessionManager } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -15,53 +15,86 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const handleLogin = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        // Check if user is already authenticated
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (user) {
+          // Check if there's an active session
+          const { data: session, error } = await supabase
+            .from('user_sessions')
+            .select()
+            .eq('userId', user.id)
+            .gt('expiresAt', new Date().toISOString())
+            .order('createdAt', { ascending: false })
+            .limit(1)
+            .single()
+
+          if (session && !error) {
+            console.log('Active session found, redirecting to dashboard...')
+            router.push('/dashboard')
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Error checking session:', error)
+      }
+    }
+
+    checkExistingSession()
+  }, [router])
+
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
     setLoading(true)
+    setError(null)
 
     try {
       console.log('Starting login process...')
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      
+      // First, check if user already exists and has sessions
+      const { data: { user: existingUser } } = await supabase.auth.getUser()
+      
+      if (existingUser) {
+        // Delete all existing sessions for this user
+        console.log('Cleaning up existing sessions...')
+        await sessionManager.deleteAllUserSessions(existingUser.id)
+      }
+
+      // Proceed with authentication
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (authError) {
-        console.error('Authentication error:', authError)
-        throw authError
-      }
+      if (authError) throw authError
 
-      console.log('Authentication successful:', authData)
+      console.log('Authentication successful:', data)
 
-      // Create a new session
-      const session = await sessionManager.createSession(authData.user.id)
-      if (!session) {
-        console.error('Failed to create session')
-        throw new Error('Failed to create session')
-      }
-
+      // Create new session
+      const session = await sessionManager.createSession(data.user.id)
       console.log('Session created successfully:', session)
 
       router.push('/dashboard')
-      router.refresh()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error)
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      setError(error.message || 'An error occurred during login')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="container flex items-center justify-center min-h-[calc(100vh-4rem)]">
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Login</CardTitle>
           <CardDescription>Enter your credentials to access your account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-2">
               <Input
                 type="email"

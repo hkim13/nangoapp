@@ -95,7 +95,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-6 min-h-[calc(100vh-4rem)]">
       <Card>
         <CardHeader>
           <CardTitle>Dashboard</CardTitle>
