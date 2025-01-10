@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase, sessionManager } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { NangoConnect } from '@/components/nango-connect'
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
@@ -52,37 +53,71 @@ export default function Dashboard() {
     getUser()
   }, [router])
 
+  const handleIntegrationSuccess = () => {
+    console.log('Airtable integration connected successfully')
+    // You can add a toast notification or update UI state here
+  }
+
+  const handleIntegrationError = (error: Error) => {
+    console.error('Airtable integration failed:', error)
+    // You can add a toast notification or error message here
+  }
+
   if (!user) {
     return <div>Loading...</div>
   }
 
   return (
     <div className="container mx-auto p-6 min-h-[calc(100vh-4rem)]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Dashboard</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-bold">User Info</h2>
-              <p>Email: {user.email}</p>
-            </div>
+      <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Dashboard</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-bold">User Info</h2>
+                <p>Email: {user.email}</p>
+              </div>
 
-            <div>
-              <h2 className="text-xl font-bold mb-2">Current Session</h2>
-              {sessions.map((session) => (
-                <div key={session.id} className="p-4 border rounded">
-                  <p>Session ID: {session.sessionId}</p>
-                  <p>Created: {new Date(session.createdAt).toLocaleString()}</p>
-                  <p>Expires: {new Date(session.expiresAt).toLocaleString()}</p>
-                  <p>Last Active: {new Date(session.lastActive).toLocaleString()}</p>
-                </div>
-              ))}
+              <div>
+                <h2 className="text-xl font-bold mb-2">Current Session</h2>
+                {sessions.map((session) => (
+                  <div key={session.id} className="p-4 border rounded">
+                    <p>Session ID: {session.sessionId}</p>
+                    <p>Created: {new Date(session.createdAt).toLocaleString()}</p>
+                    <p>Expires: {new Date(session.expiresAt).toLocaleString()}</p>
+                    <p>Last Active: {new Date(session.lastActive).toLocaleString()}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Integrations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold mb-2">Airtable Connection</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  Connect your Airtable account to sync your data
+                </p>
+                <NangoConnect
+                  sessionToken={user.id}
+                  userId={user.id}
+                  onSuccess={handleIntegrationSuccess}
+                  onError={handleIntegrationError}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
