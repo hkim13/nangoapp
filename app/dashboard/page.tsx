@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { supabase, sessionManager } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function Dashboard() {
@@ -47,48 +46,11 @@ export default function Dashboard() {
       console.log('Session activity updated')
       
       setUser(user)
-      await refreshSessions()
+      setSessions([sessions.data])
     }
 
     getUser()
   }, [router])
-
-  const refreshSessions = async () => {
-    const response = await fetch('/api/test-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ action: 'list' }),
-    })
-    const data = await response.json()
-    if (data.sessions) {
-      setSessions(data.sessions)
-    }
-  }
-
-  const expireCurrentSession = async () => {
-    await fetch('/api/test-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ action: 'expire' }),
-    })
-    await refreshSessions()
-  }
-
-  const handleSignOut = async () => {
-    console.log('Starting sign out process...')
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      console.log('Deleting user sessions...')
-      await sessionManager.deleteAllUserSessions(user.id)
-    }
-    console.log('Signing out from Supabase...')
-    await supabase.auth.signOut()
-    router.push('/auth/login')
-  }
 
   if (!user) {
     return <div>Loading...</div>
@@ -108,29 +70,15 @@ export default function Dashboard() {
             </div>
 
             <div>
-              <h2 className="text-xl font-bold mb-2">Sessions</h2>
-              <div className="space-y-2">
-                {sessions.map((session) => (
-                  <div key={session.id} className="p-4 border rounded">
-                    <p>Session ID: {session.sessionId}</p>
-                    <p>Created: {new Date(session.createdAt).toLocaleString()}</p>
-                    <p>Expires: {new Date(session.expiresAt).toLocaleString()}</p>
-                    <p>Last Active: {new Date(session.lastActive).toLocaleString()}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-x-4">
-              <Button onClick={expireCurrentSession} variant="destructive">
-                Expire Current Session
-              </Button>
-              <Button onClick={refreshSessions}>
-                Refresh Sessions
-              </Button>
-              <Button onClick={handleSignOut}>
-                Sign Out
-              </Button>
+              <h2 className="text-xl font-bold mb-2">Current Session</h2>
+              {sessions.map((session) => (
+                <div key={session.id} className="p-4 border rounded">
+                  <p>Session ID: {session.sessionId}</p>
+                  <p>Created: {new Date(session.createdAt).toLocaleString()}</p>
+                  <p>Expires: {new Date(session.expiresAt).toLocaleString()}</p>
+                  <p>Last Active: {new Date(session.lastActive).toLocaleString()}</p>
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>
