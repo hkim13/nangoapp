@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -16,7 +17,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "Nango App",
-  description: "Manage your API integrations with Nango",
+  description: "Integrate your Airtable data seamlessly",
 };
 
 export default function RootLayout({
@@ -27,12 +28,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
         <Navbar />
-        <main>
+        <main className="flex-1">
           {children}
         </main>
+        <Footer />
       </body>
     </html>
   );
