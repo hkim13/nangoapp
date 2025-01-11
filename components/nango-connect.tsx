@@ -18,7 +18,7 @@ type NangoAuthResult = {
 
 export function NangoConnect({ sessionToken, userId, onSuccess, onError }: NangoConnectProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const AIRTABLE_INTEGRATION_ID = 'airtable-qjri';
+  const AIRTABLE_INTEGRATION_ID = 'airtable-gcm8';
 
   const handleConnect = async () => {
     if (!sessionToken || !userId) {
