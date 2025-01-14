@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase, sessionManager } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { NangoConnect } from '@/components/nango-connect'
+import { IntegrationManager } from '@/components/integration-manager'
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
@@ -53,16 +53,6 @@ export default function Dashboard() {
     getUser()
   }, [router])
 
-  const handleIntegrationSuccess = () => {
-    console.log('Airtable integration connected successfully')
-    // You can add a toast notification or update UI state here
-  }
-
-  const handleIntegrationError = (error: Error) => {
-    console.error('Airtable integration failed:', error)
-    // You can add a toast notification or error message here
-  }
-
   if (!user) {
     return <div>Loading...</div>
   }
@@ -96,27 +86,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Integrations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-semibold mb-2">Airtable Connection</h2>
-                <p className="text-sm text-gray-600 mb-4">
-                  Connect your Airtable account to sync your data
-                </p>
-                <NangoConnect
-                  sessionToken={user.id}
-                  userId={user.id}
-                  onSuccess={handleIntegrationSuccess}
-                  onError={handleIntegrationError}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <IntegrationManager
+          clientId="premium" // This could be fetched from user's data or environment
+          userId={user.id}
+          sessionToken={user.id}
+        />
       </div>
     </div>
   )

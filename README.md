@@ -87,6 +87,111 @@ This project uses:
    - Dashboard with session verification
    - Automatic redirect for unauthenticated users
 
+### Step 2: Integration Management
+
+The application supports multiple third-party integrations (like Airtable, QuickBooks) with a flexible system that can be configured per client.
+
+#### 2.1 Integration Architecture
+
+**Key Components:**
+1. **NangoConnect Component** (`components/nango-connect.tsx`)
+   - Base component for handling Nango OAuth connections
+   - Supports multiple integration types
+   - Configuration for each integration type:
+     ```typescript
+     const INTEGRATION_CONFIGS = {
+       airtable: {
+         id: 'airtable-gcm8',
+         name: 'Airtable',
+         buttonText: 'Connect Airtable'
+       },
+       quickbooks: {
+         id: 'quickbooks',
+         name: 'QuickBooks',
+         buttonText: 'Connect QuickBooks'
+       }
+     };
+     ```
+
+2. **Integration Manager** (`components/integration-manager.tsx`)
+   - Manages multiple integration buttons
+   - Handles success/error states for each integration
+   - Provides consistent UI across all integrations
+   - Usage example:
+     ```typescript
+     <IntegrationManager
+       clientId="premium"  // Determines available integrations
+       userId={user.id}
+       sessionToken={user.id}
+     />
+     ```
+
+3. **Client Integration Config** (`lib/integration-config.ts`)
+   - Defines which integrations are available for each client type
+   - Example configuration:
+     ```typescript
+     const CLIENT_INTEGRATION_CONFIGS = {
+       'default': {
+         clientId: 'default',
+         enabledIntegrations: ['airtable']
+       },
+       'premium': {
+         clientId: 'premium',
+         enabledIntegrations: ['airtable', 'quickbooks']
+       }
+     };
+     ```
+
+#### 2.2 Adding New Integrations
+
+To add a new integration type:
+
+1. Update `IntegrationType` in `components/nango-connect.tsx`:
+   ```typescript
+   export type IntegrationType = 'airtable' | 'quickbooks' | 'your_new_integration';
+   ```
+
+2. Add integration config in `components/nango-connect.tsx`:
+   ```typescript
+   const INTEGRATION_CONFIGS = {
+     // ... existing configs ...
+     your_new_integration: {
+       id: 'your-nango-integration-id',
+       name: 'Your Integration Name',
+       buttonText: 'Connect to Service'
+     }
+   };
+   ```
+
+3. Add description in `components/integration-manager.tsx`:
+   ```typescript
+   const INTEGRATION_DESCRIPTIONS = {
+     // ... existing descriptions ...
+     your_new_integration: 'Description of your integration'
+   };
+   ```
+
+4. Update client configurations in `lib/integration-config.ts`:
+   ```typescript
+   const CLIENT_INTEGRATION_CONFIGS = {
+     'premium': {
+       clientId: 'premium',
+       enabledIntegrations: ['airtable', 'quickbooks', 'your_new_integration']
+     }
+   };
+   ```
+
+#### 2.3 Integration Types
+
+Current supported integrations:
+- **Airtable** (`airtable-gcm8`)
+  - Syncs data from Airtable bases
+  - Used for data management and synchronization
+
+- **QuickBooks** (`quickbooks`)
+  - Manages financial data and transactions
+  - Available in premium client configuration
+
 ## Getting Started
 
 First, run the development server:
@@ -130,7 +235,6 @@ CREATE TABLE user_sessions (
 
 ## Next Steps
 - [ ] Step 1.2: Session Handling with Nango
-- [ ] Step 2: Configure Nango SDK
 - [ ] Step 3: Fetch Data from External APIs
 - [ ] Step 4: Display Data in Frontend
 - [ ] Step 5: Workflow Integration with n8n

@@ -4,7 +4,29 @@ import { useEffect, useState } from 'react';
 import Nango from '@nangohq/frontend';
 import { Button } from '@/components/ui/button';
 
+export type IntegrationType = 'airtable' | 'quickbooks';
+
+interface IntegrationConfig {
+  id: string;
+  name: string;
+  buttonText: string;
+}
+
+const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
+  airtable: {
+    id: 'airtable-gcm8',
+    name: 'Airtable',
+    buttonText: 'Connect Airtable'
+  },
+  quickbooks: {
+    id: 'quickbooks',
+    name: 'QuickBooks',
+    buttonText: 'Connect QuickBooks'
+  }
+};
+
 interface NangoConnectProps {
+  integrationType: IntegrationType;
   sessionToken: string;
   userId: string;
   onSuccess?: () => void;
@@ -16,9 +38,9 @@ type NangoAuthResult = {
   providerConfigKey: string;
 };
 
-export function NangoConnect({ sessionToken, userId, onSuccess, onError }: NangoConnectProps) {
+export function NangoConnect({ integrationType, sessionToken, userId, onSuccess, onError }: NangoConnectProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const AIRTABLE_INTEGRATION_ID = 'airtable-gcm8';
+  const integrationConfig = INTEGRATION_CONFIGS[integrationType];
 
   const handleConnect = async () => {
     if (!sessionToken || !userId) {
@@ -32,11 +54,11 @@ export function NangoConnect({ sessionToken, userId, onSuccess, onError }: Nango
         publicKey: process.env.NEXT_PUBLIC_NANGO_PUBLIC_KEY ?? '' 
       });
       
-      const result = await nango.auth(AIRTABLE_INTEGRATION_ID, userId);
-      console.log('Airtable connection successful:', result);
+      const result = await nango.auth(integrationConfig.id, userId);
+      console.log(`${integrationConfig.name} connection successful:`, result);
       onSuccess?.();
     } catch (error) {
-      console.error('Failed to initialize Nango:', error);
+      console.error(`Failed to initialize ${integrationConfig.name}:`, error);
       onError?.(error instanceof Error ? error : new Error('Unknown error occurred'));
     } finally {
       setIsLoading(false);
@@ -49,7 +71,7 @@ export function NangoConnect({ sessionToken, userId, onSuccess, onError }: Nango
       disabled={isLoading}
       className="w-full"
     >
-      {isLoading ? 'Connecting...' : 'Connect Airtable'}
+      {isLoading ? 'Connecting...' : integrationConfig.buttonText}
     </Button>
   );
 }
