@@ -18,7 +18,8 @@ export default function SignUp() {
     setLoading(true)
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // Sign up the user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -26,7 +27,27 @@ export default function SignUp() {
         },
       })
 
-      if (error) throw error
+      if (authError) throw authError
+
+      if (authData.user) {
+        // Create external user record with premium role
+        const { error: dbError } = await supabase
+          .from('external_users')
+          .insert({
+            auth_id: authData.user.id,
+            email: authData.user.email,
+            role: 'premium', // Setting default role as premium
+            status: 'active',
+            subscription_status: 'none'
+          })
+
+        if (dbError) {
+          console.error('Error creating external user record:', dbError)
+          // If there's an error creating the user record, we should clean up the auth user
+          await supabase.auth.signOut()
+          throw new Error('Failed to create user profile')
+        }
+      }
 
       alert('Check your email for the confirmation link!')
       router.push('/auth/login')
