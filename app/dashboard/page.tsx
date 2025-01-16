@@ -17,21 +17,48 @@ export default function Dashboard() {
         return
       }
 
-      // Get user role from external_users table
-      const { data: externalUser, error } = await supabase
+      // First, try to find user in internal_users
+      const { data: internalUser, error: internalError } = await supabase
+        .from('internal_users')
+        .select('role')
+        .eq('auth_id', user.id)
+        .single()
+
+      if (internalUser) {
+        // Handle internal user routing
+        switch (internalUser.role) {
+          case 'super_admin':
+            router.push('/dashboard/internal/super-admin')
+            break
+          case 'admin':
+            router.push('/dashboard/internal/admin')
+            break
+          case 'developer':
+            router.push('/dashboard/internal/developer')
+            break
+          default:
+            console.error('Invalid internal user role')
+            await supabase.auth.signOut()
+            router.push('/auth/login')
+        }
+        return
+      }
+
+      // If not internal user, check external_users
+      const { data: externalUser, error: externalError } = await supabase
         .from('external_users')
         .select('role')
         .eq('auth_id', user.id)
         .single()
 
-      if (error || !externalUser) {
-        console.error('Error fetching user role:', error)
+      if (externalError || !externalUser) {
+        console.error('Error fetching user role:', externalError)
         await supabase.auth.signOut()
         router.push('/auth/login')
         return
       }
 
-      // Redirect based on role
+      // Handle external user routing
       switch (externalUser.role) {
         case 'free':
           router.push('/dashboard/free')
@@ -43,7 +70,7 @@ export default function Dashboard() {
           router.push('/dashboard/client')
           break
         default:
-          console.error('Invalid user role')
+          console.error('Invalid external user role')
           await supabase.auth.signOut()
           router.push('/auth/login')
       }
