@@ -21,15 +21,18 @@ export default function InternalLogin() {
       await supabase.auth.signOut()
 
       // Attempt to sign in
-      const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (authError) throw authError
+      if (signInError) throw signInError
 
-      if (!user) {
-        throw new Error('No user returned after login')
+      // Get the session to verify the user is authenticated
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        throw new Error('Authentication failed')
       }
 
       // Check if user exists in internal_users table
@@ -37,17 +40,16 @@ export default function InternalLogin() {
         .from('internal_users')
         .select('role')
         .eq('email', email)
-        .maybeSingle()
+        .single()
 
       if (dbError) {
         console.error('Database error:', dbError)
-        throw new Error('Error verifying user access')
+        throw new Error('Error verifying internal user access')
       }
 
       if (!internalUser) {
-        // If not an internal user, sign them out
         await supabase.auth.signOut()
-        throw new Error('Unauthorized access. This portal is for internal users only.')
+        throw new Error('Unauthorized. This portal is for internal users only.')
       }
 
       // Redirect based on role
@@ -66,7 +68,12 @@ export default function InternalLogin() {
       }
     } catch (error) {
       console.error('Login error:', error)
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      await supabase.auth.signOut()
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError('An unexpected error occurred')
+      }
       setLoading(false)
     }
   }

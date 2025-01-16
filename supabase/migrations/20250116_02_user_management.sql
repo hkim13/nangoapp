@@ -23,7 +23,7 @@ CREATE TABLE external_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     auth_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT UNIQUE NOT NULL,
-    role external_user_role NOT NULL DEFAULT 'premium',  -- Setting premium as default
+    role external_user_role NOT NULL DEFAULT 'premium',
     company_name TEXT,
     status user_status NOT NULL DEFAULT 'active',
     subscription_status subscription_status NOT NULL DEFAULT 'none',
@@ -69,74 +69,6 @@ CREATE INDEX idx_external_users_role ON external_users(role);
 CREATE INDEX idx_external_users_status ON external_users(status);
 CREATE INDEX idx_client_integrations_user_id ON client_integrations(user_id);
 CREATE INDEX idx_pending_invitations_email ON pending_invitations(email);
-
--- Enable Row Level Security
-ALTER TABLE internal_users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE external_users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE client_integrations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE pending_invitations ENABLE ROW LEVEL SECURITY;
-
--- RLS Policies for internal_users
-CREATE POLICY "Super admins can do everything with internal users"
-    ON internal_users
-    TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM internal_users WHERE auth_id = auth.uid() AND role = 'super_admin'
-        )
-    );
-
-CREATE POLICY "Users can view their own internal user profile"
-    ON internal_users
-    FOR SELECT
-    TO authenticated
-    USING (auth_id = auth.uid());
-
--- RLS Policies for external_users
-CREATE POLICY "Internal users can manage external users"
-    ON external_users
-    TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM internal_users WHERE auth_id = auth.uid()
-        )
-    );
-
-CREATE POLICY "Users can view their own external user profile"
-    ON external_users
-    FOR SELECT
-    TO authenticated
-    USING (auth_id = auth.uid());
-
--- RLS Policies for client_integrations
-CREATE POLICY "Internal users can manage client integrations"
-    ON client_integrations
-    TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM internal_users WHERE auth_id = auth.uid()
-        )
-    );
-
-CREATE POLICY "Users can view their own integrations"
-    ON client_integrations
-    FOR SELECT
-    TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM external_users WHERE auth_id = auth.uid() AND id = client_integrations.user_id
-        )
-    );
-
--- RLS Policies for pending_invitations
-CREATE POLICY "Only internal users can manage invitations"
-    ON pending_invitations
-    TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM internal_users WHERE auth_id = auth.uid()
-        )
-    );
 
 -- Create trigger function to update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
