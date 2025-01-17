@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Nango from '@nangohq/frontend';
 import { Button } from '@/components/ui/button';
 
-export type IntegrationType = 'airtable' | 'quickbooks';
+export type IntegrationType = 'airtable' | 'quickbooks' | 'google-drive';
 
 interface IntegrationConfig {
   id: string;
@@ -22,6 +22,11 @@ const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
     id: 'quickbooks',
     name: 'QuickBooks',
     buttonText: 'Connect QuickBooks'
+  },
+  'google-drive': {
+    id: 'google-drive',
+    name: 'Google Drive',
+    buttonText: 'Connect Google Drive'
   }
 };
 
