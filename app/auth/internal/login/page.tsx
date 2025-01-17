@@ -39,7 +39,7 @@ export default function InternalLogin() {
       const { data: internalUser, error: dbError } = await supabase
         .from('internal_users')
         .select('role')
-        .eq('email', email)
+        .eq('auth_id', session.user.id)
         .single()
 
       if (dbError) {
