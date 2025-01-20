@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import Nango from '@nangohq/frontend';
+import { Nango as NangoNode } from '@nangohq/node';
 import { Button } from '@/components/ui/button';
+
 
 export type IntegrationType = 'airtable' | 'quickbooks' | 'google-drive';
 
@@ -32,7 +34,8 @@ const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
 
 // Hardcoded test values from the webhook response
 const TEST_CONNECTION_ID = 'b1e6d6a2-0c6d-4313-98c9-1e682216817c';
-const TEST_PROVIDER_CONFIG_KEY = 'google-drive-pc8a';
+// const TEST_PROVIDER_CONFIG_KEY = 'google-drive-pc8a';
+const TEST_PROVIDER_CONFIG_KEY = 'google-drive-6efd';
 
 interface NangoConnectProps {
   integrationType: IntegrationType;
@@ -89,7 +92,7 @@ export function NangoConnect({
         clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
         developerKey: process.env.NEXT_PUBLIC_GOOGLE_PICKER_API_KEY!,
         accessToken,
-        callbackFunction: (data: any) => {
+        callbackFunction: async (data: any) => {
           console.log('[NangoConnect] Picker callback received:', data);
           if (data.action === 'cancel') {
             console.log('[NangoConnect] Picker cancelled');
@@ -100,6 +103,36 @@ export function NangoConnect({
           else if (data.action === 'picked') {
             const fileIds = data.docs.map((doc: any) => doc.id);
             console.log('[NangoConnect] Files selected:', fileIds);
+            
+            // Call the API endpoint instead of using NangoNode directly
+            await fetch('/api/nango/update-metadata', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.NANGO_SECRET_KEY}`
+              },
+              body: JSON.stringify({ connectionId: TEST_CONNECTION_ID, fileIds })
+            });
+
+            console.log('[NangoConnect] Metadata updated successfully');
+
+            // Call our backend API endpoint to trigger the sync
+            await fetch('/api/nango/sync', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.NANGO_SECRET_KEY}` // Pass the token in the header
+              },
+              body: JSON.stringify({
+                provider_config_key: TEST_PROVIDER_CONFIG_KEY,
+                connection_id: TEST_CONNECTION_ID,
+                syncs: [],
+                full_resync: true
+              })
+            });
+
+            console.log('[NangoConnect] Sync completed');
+            
             resolve(fileIds);
           }
         }
