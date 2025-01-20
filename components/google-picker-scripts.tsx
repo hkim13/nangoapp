@@ -3,6 +3,16 @@
 import Script from 'next/script';
 import { useEffect } from 'react';
 
+/*
+  1. get appId, clientId, developerKey from GCP- unique per application, not customer 
+  2. connect to google drive
+  3. use connectionId and providerKey from Nango to get the accessToken from Nango
+  4. feed accessToken, appId, clientId, developerKey into google picker
+  5. call nango-sdk from nango.updateMetadata()
+  6. re-syncing frontend with updated metadata
+  7. grab the data from google drive, embed it, etc...
+*/
+
 declare global {
   interface Window {
     tokenClient: any;
