@@ -35,7 +35,7 @@ const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
 // Hardcoded test values from the webhook response
 const TEST_CONNECTION_ID = 'b1e6d6a2-0c6d-4313-98c9-1e682216817c';
 // const TEST_PROVIDER_CONFIG_KEY = 'google-drive-pc8a';
-const TEST_PROVIDER_CONFIG_KEY = 'google-drive-6efd';
+const TEST_PROVIDER_CONFIG_KEY = 'google-drive-pc8a';
 
 interface NangoConnectProps {
   integrationType: IntegrationType;
@@ -126,12 +126,29 @@ export function NangoConnect({
               body: JSON.stringify({
                 provider_config_key: TEST_PROVIDER_CONFIG_KEY,
                 connection_id: TEST_CONNECTION_ID,
-                syncs: [],
+                syncs: ["documents"],
                 full_resync: true
               })
             });
 
             console.log('[NangoConnect] Sync completed');
+
+            // Trigger action for each file
+            for (const fileId of fileIds) {
+              await fetch('/api/nango/action', {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  provider_config_key: TEST_PROVIDER_CONFIG_KEY,
+                  connection_id: TEST_CONNECTION_ID,
+                  fileId
+                })
+              });
+            }
+
+            console.log('[NangoConnect] Actions triggered for all files');
             
             resolve(fileIds);
           }
