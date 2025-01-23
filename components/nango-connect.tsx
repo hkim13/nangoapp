@@ -104,53 +104,45 @@ export function NangoConnect({
             const fileIds = data.docs.map((doc: any) => doc.id);
             console.log('[NangoConnect] Files selected:', fileIds);
             
-            // Call the API endpoint instead of using NangoNode directly
-            await fetch('/api/nango/update-metadata', {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.NANGO_SECRET_KEY}`
-              },
-              body: JSON.stringify({ connectionId: TEST_CONNECTION_ID, fileIds })
-            });
-
-            console.log('[NangoConnect] Metadata updated successfully');
-
-            // Call our backend API endpoint to trigger the sync
-            await fetch('/api/nango/sync', {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.NANGO_SECRET_KEY}` // Pass the token in the header
-              },
-              body: JSON.stringify({
-                provider_config_key: TEST_PROVIDER_CONFIG_KEY,
-                connection_id: TEST_CONNECTION_ID,
-                syncs: ["documents"],
-                full_resync: true
-              })
-            });
-
-            console.log('[NangoConnect] Sync completed');
-
-            // Trigger action for each file
-            for (const fileId of fileIds) {
-              await fetch('/api/nango/action', {
-                method: 'POST',
-                headers: { 
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  provider_config_key: TEST_PROVIDER_CONFIG_KEY,
-                  connection_id: TEST_CONNECTION_ID,
-                  fileId
-                })
-              });
-            }
-
-            console.log('[NangoConnect] Actions triggered for all files');
+            // Get access token for the connection
+            const tokenResponse = await fetch(
+              `/api/nango/access-token?connectionId=${TEST_CONNECTION_ID}&provider_config_key=${TEST_PROVIDER_CONFIG_KEY}`
+            );
             
-            resolve(fileIds);
+            if (!tokenResponse.ok) {
+              throw new Error('Failed to get access token');
+            }
+            
+            const { access_token } = await tokenResponse.json();
+            
+            // Process each selected file
+            for (const fileId of fileIds) {
+              try {
+                // Download and process file directly using Google Drive API
+                const response = await fetch('/api/google-drive/download', {
+                  method: 'POST',
+                  headers: { 
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    fileId,
+                    access_token
+                  })
+                });
+
+                if (!response.ok) {
+                  console.error(`Failed to process file ${fileId}:`, await response.text());
+                  continue;
+                }
+
+                console.log(`Successfully processed file ${fileId}`);
+              } catch (error) {
+                console.error(`Error processing file ${fileId}:`, error);
+              }
+            }
+            
+            console.log('[NangoConnect] All files processed');
+            onSuccess?.({ connectionId: TEST_CONNECTION_ID, fileIds });
           }
         }
       });

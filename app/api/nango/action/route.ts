@@ -1,42 +1,47 @@
+import { downloadFile } from '@/utils/google-drive';
+
 export async function POST(request: Request) {
   try {
     const { provider_config_key, connection_id, fileId } = await request.json();
 
-    const response = await fetch('https://api.nango.dev/action/trigger', {
-      method: 'POST',
+    // Get access token from Nango
+    const tokenResponse = await fetch('https://api.nango.dev/token', {
       headers: {
         'Authorization': `Bearer ${process.env.NANGO_SECRET_KEY}`,
         'Connection-Id': connection_id,
         'Provider-Config-Key': provider_config_key,
-        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        action_name: 'fetch-document',
-        input: {
-          id: fileId
-        }
-      })
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to trigger action: ${response.statusText}`);
+    if (!tokenResponse.ok) {
+      throw new Error(`Failed to get access token: ${tokenResponse.statusText}`);
     }
 
-    const result = await response.json();
-    console.log('Received Nango response, attempting to send to N8N...');
+    const { access_token } = await tokenResponse.json();
+    
+    // Download file directly from Google Drive
+    const fileResult = await downloadFile(fileId, access_token);
+    console.log('Received file from Google Drive:', {
+      name: fileResult.name,
+      mimeType: fileResult.mimeType,
+      base64Length: fileResult.base64Content.length
+    });
     
     // Send document content to N8N webhook if available
-    if (result) {
+    if (fileResult.base64Content) {
         try {
             const n8nWebhookUrl = 'https://teezworkspace.app.n8n.cloud/webhook/f36e10c8-ffa4-4d66-b28a-c8a900236201';
+            
             const n8nResponse = await fetch(n8nWebhookUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    documentContent: result,  // The result itself is the base64 content
+                    documentContent: fileResult.base64Content,
                     fileId,
+                    fileName: fileResult.name,
+                    mimeType: fileResult.mimeType,
                     timestamp: new Date().toISOString(),
                     isBase64: true
                 })
@@ -53,18 +58,18 @@ export async function POST(request: Request) {
             console.error('Error sending to N8N:', webhookError);
         }
     } else {
-        console.warn('No response content found from Nango');
+        console.warn('No file content found from Google Drive');
     }
     
-    // Log truncated version of the response
-    const truncatedResult = typeof result === 'string' ? `${result.slice(0, 10)}...` : result;
-    console.log('Nango Action Response:', truncatedResult);
-    
-    return Response.json({ success: true, result });
+    return Response.json({ 
+      success: true,
+      fileName: fileResult.name,
+      mimeType: fileResult.mimeType
+    });
   } catch (error) {
     console.error('Action error:', error);
     return Response.json({ 
-      error: 'Failed to trigger action', 
+      error: 'Failed to download file', 
       details: error instanceof Error ? error.message : String(error) 
     }, { status: 500 });
   }
