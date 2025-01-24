@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import crypto from 'crypto';
 
 // In-memory storage for the latest connection
 let latestConnection: {
@@ -8,11 +9,52 @@ let latestConnection: {
   timestamp: number;
 } | null = null;
 
+function verifyNangoSignature(signature: string, body: string): boolean {
+  const secret = process.env.NANGO_SECRET_KEY;
+  if (!secret) {
+    console.error('[NangoWebhook] NANGO_SECRET_KEY is not set in environment variables');
+    return false;
+  }
+
+  const computedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(body)
+    .digest('hex');
+
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(computedSignature)
+  );
+}
+
 export async function POST(request: NextRequest) {
   console.log('[NangoWebhook] Received webhook request');
   
   try {
-    const webhookData = await request.json();
+    // Get the signature from headers
+    const signature = request.headers.get('x-nango-signature');
+    if (!signature) {
+      console.error('[NangoWebhook] No signature found in request headers');
+      return NextResponse.json(
+        { error: 'No signature provided' },
+        { status: 401 }
+      );
+    }
+
+    // Get the raw body as text for signature verification
+    const rawBody = await request.text();
+    
+    // Verify the signature
+    if (!verifyNangoSignature(signature, rawBody)) {
+      console.error('[NangoWebhook] Invalid signature');
+      return NextResponse.json(
+        { error: 'Invalid signature' },
+        { status: 401 }
+      );
+    }
+
+    // Parse the body after verification
+    const webhookData = JSON.parse(rawBody);
     console.log('[NangoWebhook] Webhook data:', webhookData);
 
     // Handle auth event
