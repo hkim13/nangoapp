@@ -5,7 +5,6 @@ import Nango from '@nangohq/frontend';
 import { Nango as NangoNode } from '@nangohq/node';
 import { Button } from '@/components/ui/button';
 
-
 export type IntegrationType = 'airtable' | 'quickbooks' | 'google-drive';
 
 interface IntegrationConfig {
@@ -31,11 +30,6 @@ const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
     buttonText: 'Connect Google Drive'
   }
 };
-
-// Hardcoded test values from the webhook response
-const TEST_CONNECTION_ID = 'b1e6d6a2-0c6d-4313-98c9-1e682216817c';
-// const TEST_PROVIDER_CONFIG_KEY = 'google-drive-pc8a';
-const TEST_PROVIDER_CONFIG_KEY = 'google-drive-pc8a';
 
 interface NangoConnectProps {
   integrationType: IntegrationType;
@@ -104,18 +98,25 @@ export function NangoConnect({
             const fileIds = data.docs.map((doc: any) => doc.id);
             console.log('[NangoConnect] Files selected:', fileIds);
             
-            // Get access token for the connection
-            const tokenResponse = await fetch(
-              `/api/nango/access-token?connectionId=${TEST_CONNECTION_ID}&provider_config_key=${TEST_PROVIDER_CONFIG_KEY}`
-            );
-            
-            if (!tokenResponse.ok) {
-              throw new Error('Failed to get access token');
-            }
-            
-            const { access_token } = await tokenResponse.json();
-            
             try {
+              // Get the latest connection information
+              const connectionResponse = await fetch('/api/nango/webhook');
+              if (!connectionResponse.ok) {
+                throw new Error('Failed to get connection information');
+              }
+              const connectionInfo = await connectionResponse.json();
+              
+              // Get access token for the connection
+              const tokenResponse = await fetch(
+                `/api/nango/access-token?connectionId=${connectionInfo.connectionId}&provider_config_key=${connectionInfo.providerConfigKey}`
+              );
+              
+              if (!tokenResponse.ok) {
+                throw new Error('Failed to get access token');
+              }
+              
+              const { access_token } = await tokenResponse.json();
+              
               // Download all files in parallel
               const processedFiles = await Promise.all(
                 fileIds.map(async fileId => {
@@ -182,7 +183,7 @@ export function NangoConnect({
               }
 
               console.log('[NangoConnect] All files processed');
-              onSuccess?.({ connectionId: TEST_CONNECTION_ID, fileIds });
+              onSuccess?.({ connectionId: connectionInfo.connectionId, fileIds });
             } catch (error) {
               console.error('[NangoConnect] Error processing files:', error);
               onError?.(error instanceof Error ? error : new Error('Failed to process files'));
@@ -213,29 +214,33 @@ export function NangoConnect({
         const authResult = await nango.auth(integrationConfig.id, userId);
         console.log('[NangoConnect] OAuth completed:', authResult);
 
-        // Use hardcoded test values since we can't receive webhooks locally
-        console.log('[NangoConnect] Using test connection details');
-        try {
-          const accessToken = await getNangoAccessToken(
-            TEST_CONNECTION_ID,
-            TEST_PROVIDER_CONFIG_KEY
-          );
-
-          console.log('[NangoConnect] Opening picker with access token');
-          const fileIds = await openGooglePicker(accessToken);
-          if (fileIds.length === 0) {
-            console.log('[NangoConnect] No files selected');
-            onCancel?.();
-            return;
-          }
-          console.log('[NangoConnect] Connection complete with files:', fileIds);
-          onSuccess?.({ connectionId: TEST_CONNECTION_ID, fileIds });
-        } catch (error) {
-          console.error('[NangoConnect] Error with test connection:', error);
-          // If test connection fails, use the actual auth result
-          console.log('[NangoConnect] Falling back to auth result connection');
-          onSuccess?.({ connectionId: authResult.connectionId });
+        // Get the latest connection information
+        const connectionResponse = await fetch('/api/nango/webhook');
+        if (!connectionResponse.ok) {
+          throw new Error('Failed to get connection information');
         }
+        const connectionInfo = await connectionResponse.json();
+        
+        // Get access token for the connection
+        const tokenResponse = await fetch(
+          `/api/nango/access-token?connectionId=${connectionInfo.connectionId}&provider_config_key=${connectionInfo.providerConfigKey}`
+        );
+        
+        if (!tokenResponse.ok) {
+          throw new Error('Failed to get access token');
+        }
+        
+        const { access_token } = await tokenResponse.json();
+        
+        console.log('[NangoConnect] Opening picker with access token');
+        const fileIds = await openGooglePicker(access_token);
+        if (fileIds.length === 0) {
+          console.log('[NangoConnect] No files selected');
+          onCancel?.();
+          return;
+        }
+        console.log('[NangoConnect] Connection complete with files:', fileIds);
+        onSuccess?.({ connectionId: connectionInfo.connectionId, fileIds });
       } else {
         const result = await nango.auth(integrationConfig.id, userId);
         console.log(`[NangoConnect] ${integrationConfig.name} connection successful:`, result);
