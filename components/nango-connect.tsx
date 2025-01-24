@@ -214,12 +214,29 @@ export function NangoConnect({
         const authResult = await nango.auth(integrationConfig.id, userId);
         console.log('[NangoConnect] OAuth completed:', authResult);
 
-        // Get the latest connection information
-        const connectionResponse = await fetch('/api/nango/webhook');
-        if (!connectionResponse.ok) {
-          throw new Error('Failed to get connection information');
+        let connectionInfo;
+        try {
+          // Try to get the latest connection information from webhook
+          const connectionResponse = await fetch('/api/nango/webhook');
+          if (connectionResponse.ok) {
+            connectionInfo = await connectionResponse.json();
+            console.log('[NangoConnect] Got connection info from webhook:', connectionInfo);
+          } else {
+            console.log('[NangoConnect] No webhook data yet, using auth result');
+            // Use the connection info from the auth result
+            connectionInfo = {
+              connectionId: authResult.connectionId,
+              providerConfigKey: integrationConfig.id
+            };
+          }
+        } catch (error) {
+          console.log('[NangoConnect] Error getting webhook data, using auth result:', error);
+          // Use the connection info from the auth result as fallback
+          connectionInfo = {
+            connectionId: authResult.connectionId,
+            providerConfigKey: integrationConfig.id
+          };
         }
-        const connectionInfo = await connectionResponse.json();
         
         // Get access token for the connection
         const tokenResponse = await fetch(
@@ -229,7 +246,7 @@ export function NangoConnect({
         if (!tokenResponse.ok) {
           throw new Error('Failed to get access token');
         }
-        
+
         const { access_token } = await tokenResponse.json();
         
         console.log('[NangoConnect] Opening picker with access token');

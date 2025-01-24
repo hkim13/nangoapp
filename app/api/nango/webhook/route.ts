@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import crypto from 'crypto';
 
+console.log('inside webhook');
+
 // In-memory storage for the latest connection
 let latestConnection: {
   connectionId: string;
@@ -102,12 +104,18 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+// Handle GET requests to retrieve the latest connection
+export async function GET(request: NextRequest) {
+  console.log('[NangoWebhook] GET request received');
+  
   if (!latestConnection) {
+    console.log('[NangoWebhook] No connection information available');
     return NextResponse.json(
       { error: 'No connection information available' },
       { status: 404 }
     );
   }
+
+  console.log('[NangoWebhook] Returning connection:', latestConnection);
   return NextResponse.json(latestConnection);
 }
