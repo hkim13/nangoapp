@@ -115,34 +115,78 @@ export function NangoConnect({
             
             const { access_token } = await tokenResponse.json();
             
-            // Process each selected file
-            for (const fileId of fileIds) {
-              try {
-                // Download and process file directly using Google Drive API
-                const response = await fetch('/api/google-drive/download', {
+            try {
+              // Download all files in parallel
+              const processedFiles = await Promise.all(
+                fileIds.map(async fileId => {
+                  try {
+                    const response = await fetch('/api/google-drive/download', {
+                      method: 'POST',
+                      headers: { 
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        fileId,
+                        access_token
+                      })
+                    });
+
+                    if (!response.ok) {
+                      console.error(`Failed to download file ${fileId}:`, await response.text());
+                      return null;
+                    }
+
+                    const result = await response.json();
+                    console.log(`Successfully downloaded file ${fileId}`);
+                    return {
+                      documentContent: result.documentContent,
+                      fileId: fileId,
+                      fileName: result.fileName,
+                      mimeType: result.mimeType,
+                      timestamp: new Date().toISOString(),
+                      isBase64: true
+                    };
+                  } catch (error) {
+                    console.error(`Error downloading file ${fileId}:`, error);
+                    return null;
+                  }
+                })
+              );
+
+              // Filter out any failed downloads
+              const successfulFiles = processedFiles.filter((file): file is NonNullable<typeof file> => file !== null);
+
+              if (successfulFiles.length > 0) {
+                // Send all files together to N8N in a single webhook
+                const n8nWebhookUrl = 'https://teezworkspace.app.n8n.cloud/webhook/f36e10c8-ffa4-4d66-b28a-c8a900236201';
+                const n8nResponse = await fetch(n8nWebhookUrl, {
                   method: 'POST',
-                  headers: { 
+                  headers: {
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({
-                    fileId,
-                    access_token
+                    files: successfulFiles,
+                    batchTimestamp: new Date().toISOString(),
+                    totalFiles: successfulFiles.length
                   })
                 });
 
-                if (!response.ok) {
-                  console.error(`Failed to process file ${fileId}:`, await response.text());
-                  continue;
+                if (!n8nResponse.ok) {
+                  throw new Error('Failed to send files to N8N');
                 }
 
-                console.log(`Successfully processed file ${fileId}`);
-              } catch (error) {
-                console.error(`Error processing file ${fileId}:`, error);
+                console.log('[NangoConnect] Successfully sent all files to N8N:', {
+                  totalFiles: successfulFiles.length,
+                  fileNames: successfulFiles.map(f => f.fileName)
+                });
               }
+
+              console.log('[NangoConnect] All files processed');
+              onSuccess?.({ connectionId: TEST_CONNECTION_ID, fileIds });
+            } catch (error) {
+              console.error('[NangoConnect] Error processing files:', error);
+              onError?.(error instanceof Error ? error : new Error('Failed to process files'));
             }
-            
-            console.log('[NangoConnect] All files processed');
-            onSuccess?.({ connectionId: TEST_CONNECTION_ID, fileIds });
           }
         }
       });

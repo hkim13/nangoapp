@@ -18,44 +18,17 @@ export async function POST(request: Request) {
       base64Length: fileResult.base64Content.length
     });
     
-    // Send to N8N webhook
-    try {
-      const n8nWebhookUrl = 'https://teezworkspace.app.n8n.cloud/webhook/f36e10c8-ffa4-4d66-b28a-c8a900236201';
-      const n8nResponse = await fetch(n8nWebhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          documentContent: fileResult.base64Content,
-          fileId,
-          fileName: fileResult.name,
-          mimeType: fileResult.mimeType,
-          timestamp: new Date().toISOString(),
-          isBase64: true
-        })
-      });
-        
-      if (!n8nResponse.ok) {
-        console.error('N8N webhook error:', await n8nResponse.text());
-        throw new Error('Failed to send to N8N');
-      }
-
-      console.log('Successfully sent to N8N');
-      
-      return Response.json({ 
-        success: true,
-        fileName: fileResult.name,
-        mimeType: fileResult.mimeType
-      });
-    } catch (error) {
-      console.error('Error sending to N8N:', error);
-      throw error;
-    }
+    // Return the file data
+    return Response.json({ 
+      success: true,
+      documentContent: fileResult.base64Content,
+      fileName: fileResult.name,
+      mimeType: fileResult.mimeType
+    });
   } catch (error) {
     console.error('Download error:', error);
     return Response.json({ 
-      error: 'Failed to process file', 
+      error: 'Failed to download file', 
       details: error instanceof Error ? error.message : String(error) 
     }, { status: 500 });
   }
