@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from './ui/button'
 import { supabase, sessionManager } from '@/lib/supabase'
+import Image from 'next/image'
 
 export function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -55,9 +56,18 @@ export function Navbar() {
   return (
     <nav className="border-b">
       <div className="flex h-16 items-center px-4 container mx-auto">
-        <Link href="/" className="font-semibold text-lg">
-          Nango App
-        </Link>
+        <div className="navbar-left flex items-center">
+          <div>
+            <Link href="/">
+              <Image src="/color_logo_no_background.png" alt="Logo" width={35} height={35} />
+            </Link>
+          </div>
+          <div className="ml-2 flex items-center" style={{ alignSelf: 'flex-end' }}>
+            <Link href="/">
+              <span className="font-semibold text-lg">Seamless AI</span>
+            </Link>
+          </div>
+        </div>
 
         {/* Main navigation */}
         <div className="ml-auto flex items-center space-x-4">

@@ -18,7 +18,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Nango App",
+  title: "Seamless AI",
   description: "Integrate your Airtable data seamlessly",
 };
 
