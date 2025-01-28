@@ -18,25 +18,10 @@ export default function Login() {
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
-        // Check if user is already authenticated
         const { data: { user } } = await supabase.auth.getUser()
         
         if (user) {
-          // Check if there's an active session
-          const { data: session, error } = await supabase
-            .from('user_sessions')
-            .select()
-            .eq('userId', user.id)
-            .gt('expiresAt', new Date().toISOString())
-            .order('createdAt', { ascending: false })
-            .limit(1)
-            .single()
-
-          if (session && !error) {
-            console.log('Active session found, redirecting to dashboard...')
-            router.push('/dashboard')
-            return
-          }
+          router.push('/dashboard')
         }
       } catch (error) {
         console.error('Error checking session:', error)
@@ -52,30 +37,12 @@ export default function Login() {
     setError(null)
 
     try {
-      console.log('Starting login process...')
-      
-      // First, check if user already exists and has sessions
-      const { data: { user: existingUser } } = await supabase.auth.getUser()
-      
-      if (existingUser) {
-        // Delete all existing sessions for this user
-        console.log('Cleaning up existing sessions...')
-        await sessionManager.deleteAllUserSessions(existingUser.id)
-      }
-
-      // Proceed with authentication
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (authError) throw authError
-
-      console.log('Authentication successful:', data)
-
-      // Create new session
-      const session = await sessionManager.createSession(data.user.id)
-      console.log('Session created successfully:', session)
 
       router.push('/dashboard')
     } catch (error: any) {
@@ -102,34 +69,26 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={loading}
               />
-            </div>
-            <div className="space-y-2">
               <Input
                 type="password"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={loading}
               />
             </div>
-            {error && (
-              <div className="text-sm text-red-500">
-                {error}
-              </div>
-            )}
+            {error && <p className="text-sm text-red-500">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-gray-600">
+        <CardFooter>
+          <p className="text-sm text-center w-full">
             Don't have an account?{' '}
-            <Link href="/auth/signup" className="text-blue-600 hover:underline">
-              Sign up
+            <Link href="/auth/signup" className="text-primary hover:underline">
+              Sign Up
             </Link>
           </p>
         </CardFooter>

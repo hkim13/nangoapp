@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 
 export default function SignUp() {
   const [email, setEmail] = useState('')
@@ -18,8 +21,7 @@ export default function SignUp() {
     setLoading(true)
 
     try {
-      // Sign up the user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -29,86 +31,57 @@ export default function SignUp() {
 
       if (authError) throw authError
 
-      if (authData.user) {
-        // Create external user record with premium role
-        const { error: dbError } = await supabase
-          .from('external_users')
-          .insert({
-            auth_id: authData.user.id,
-            email: authData.user.email,
-            role: 'premium', // Setting default role as premium
-            status: 'active',
-            subscription_status: 'none'
-          })
-
-        if (dbError) {
-          console.error('Error creating external user record:', dbError)
-          // If there's an error creating the user record, we should clean up the auth user
-          await supabase.auth.signOut()
-          throw new Error('Failed to create user profile')
-        }
-      }
-
+      // Show success message and redirect to login
       alert('Check your email for the confirmation link!')
       router.push('/auth/login')
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+    } catch (error: any) {
+      console.error('Signup error:', error)
+      setError(error.message || 'An error occurred during signup')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg">
-        <div>
-          <h2 className="text-center text-3xl font-bold">Create an account</h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSignUp}>
-          {error && (
-            <div className="bg-red-50 text-red-500 p-3 rounded">{error}</div>
-          )}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email address
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            {loading ? 'Creating account...' : 'Sign up'}
-          </button>
-          <div className="text-sm text-center">
+    <div className="container flex items-center justify-center min-h-[calc(100vh-4rem)]">
+      <Card className="w-[350px]">
+        <CardHeader>
+          <CardTitle>Sign Up</CardTitle>
+          <CardDescription>Create a new account</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSignUp} className="space-y-4">
+            <div className="space-y-2">
+              <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Creating account...' : 'Sign Up'}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter>
+          <p className="text-sm text-center w-full">
             Already have an account?{' '}
-            <Link href="/auth/login" className="text-blue-600 hover:text-blue-500">
-              Sign in
+            <Link href="/auth/login" className="text-primary hover:underline">
+              Login
             </Link>
-          </div>
-        </form>
-      </div>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   )
 }
