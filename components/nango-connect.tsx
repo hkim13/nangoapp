@@ -272,10 +272,10 @@ export function NangoConnect({
   };
 
   return (
-    <Button 
-      onClick={handleConnect} 
+    <Button
+      onClick={handleConnect}
+      className="w-full bg-black hover:bg-gray-900 text-white"
       disabled={isLoading}
-      className="w-full"
     >
       {isLoading ? 'Connecting...' : integrationConfig.buttonText}
     </Button>
