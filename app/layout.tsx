@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { Toaster } from "@/components/ui/toaster";
+import { GooglePickerScripts } from "@/components/google-picker-scripts";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -35,6 +37,8 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
+        <Toaster />
+        <GooglePickerScripts />
       </body>
     </html>
   );

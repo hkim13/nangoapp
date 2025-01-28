@@ -1,19 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { supabase, sessionManager } from '@/lib/supabase'
+import { useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { IntegrationManager } from '@/components/integration-manager'
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null)
-  const [sessions, setSessions] = useState<any[]>([])
   const router = useRouter()
 
   useEffect(() => {
-    const getUser = async () => {
-      console.log('Checking user session...')
+    const checkUserAndRedirect = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
@@ -22,76 +17,67 @@ export default function Dashboard() {
         return
       }
 
-      console.log('User found:', user)
-      
-      // Get active session
-      const sessions = await supabase
-        .from('user_sessions')
-        .select()
-        .eq('userId', user.id)
-        .order('createdAt', { ascending: false })
-        .limit(1)
+      // First, try to find user in internal_users
+      const { data: internalUser, error: internalError } = await supabase
+        .from('internal_users')
+        .select('role')
+        .eq('auth_id', user.id)
         .single()
 
-      if (!sessions.data) {
-        console.error('No active session found')
+      if (internalUser) {
+        // Handle internal user routing
+        switch (internalUser.role) {
+          case 'super_admin':
+            router.push('/dashboard/internal/super-admin')
+            break
+          case 'admin':
+            router.push('/dashboard/internal/admin')
+            break
+          case 'developer':
+            router.push('/dashboard/internal/developer')
+            break
+          default:
+            console.error('Invalid internal user role')
+            await supabase.auth.signOut()
+            router.push('/auth/login')
+        }
+        return
+      }
+
+      // If not internal user, check external_users
+      const { data: externalUser, error: externalError } = await supabase
+        .from('external_users')
+        .select('role')
+        .eq('auth_id', user.id)
+        .single()
+
+      if (externalError || !externalUser) {
+        console.error('Error fetching user role:', externalError)
         await supabase.auth.signOut()
         router.push('/auth/login')
         return
       }
 
-      console.log('Active session found:', sessions.data)
-
-      // Update session activity
-      await sessionManager.updateSessionActivity(sessions.data.sessionId)
-      console.log('Session activity updated')
-      
-      setUser(user)
-      setSessions([sessions.data])
+      // Handle external user routing
+      switch (externalUser.role) {
+        case 'free':
+          router.push('/dashboard/free')
+          break
+        case 'premium':
+          router.push('/dashboard/premium')
+          break
+        case 'client':
+          router.push('/dashboard/client')
+          break
+        default:
+          console.error('Invalid external user role')
+          await supabase.auth.signOut()
+          router.push('/auth/login')
+      }
     }
 
-    getUser()
+    checkUserAndRedirect()
   }, [router])
 
-  if (!user) {
-    return <div>Loading...</div>
-  }
-
-  return (
-    <div className="container mx-auto p-6 min-h-[calc(100vh-4rem)]">
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Dashboard</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-xl font-bold">User Info</h2>
-                <p>Email: {user.email}</p>
-              </div>
-
-              <div>
-                <h2 className="text-xl font-bold mb-2">Current Session</h2>
-                {sessions.map((session) => (
-                  <div key={session.id} className="p-4 border rounded">
-                    <p>Session ID: {session.sessionId}</p>
-                    <p>Created: {new Date(session.createdAt).toLocaleString()}</p>
-                    <p>Expires: {new Date(session.expiresAt).toLocaleString()}</p>
-                    <p>Last Active: {new Date(session.lastActive).toLocaleString()}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <IntegrationManager
-          clientId="premium" // This could be fetched from user's data or environment
-          userId={user.id}
-          sessionToken={user.id}
-        />
-      </div>
-    </div>
-  )
+  return null // This component only handles routing
 }

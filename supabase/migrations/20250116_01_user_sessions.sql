@@ -14,7 +14,7 @@ CREATE TABLE user_sessions (
 CREATE INDEX idx_user_sessions_user_id ON user_sessions("userId");
 CREATE INDEX idx_user_sessions_session_id ON user_sessions("sessionId");
 
--- Create RLS policies
+-- Enable RLS
 ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
 
 -- Policy for users to read their own sessions
