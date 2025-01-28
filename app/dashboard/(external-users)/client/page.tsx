@@ -58,6 +58,9 @@ export default function ClientDashboard() {
   useEffect(() => {
     const loadConnectedIntegrations = async () => {
       try {
+        // TODO: Implement backend API for connected integrations
+        // Temporarily disabled for demo
+        /*
         const response = await fetch('/api/integrations/connected');
         if (!response.ok) {
           throw new Error('Failed to fetch connected integrations');
@@ -67,13 +70,20 @@ export default function ClientDashboard() {
           throw new Error(data.error);
         }
         setConnectedIntegrations(data.integrations || []);
+        */
+        
+        // For demo: simulate no connected integrations
+        setConnectedIntegrations([]);
       } catch (error) {
         console.error('Failed to load connected integrations:', error);
+        // Temporarily disabled error toast for demo
+        /*
         toast({
           title: "Error",
           description: "Failed to load your connected integrations. Please refresh the page.",
           variant: "destructive",
         });
+        */
       }
     };
 
