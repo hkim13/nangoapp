@@ -76,3 +76,30 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.navbar {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-left img {
+  display: block;
+}
+
+.navbar-left span {
+  margin-left: 10px;
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.navbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}

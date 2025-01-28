@@ -1,4 +1,4 @@
-# Nango App Integration
+# Seamless AI Integration
 
 A web application that integrates Nango for managing authentication and external API connections while using Supabase for user login and session management.
 
