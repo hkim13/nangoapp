@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
-import { supabase } from '@/lib/supabase'
-import { NangoConnect, type IntegrationType } from '@/components/nango-connect'
-import { useToast } from '@/components/ui/use-toast'
+import { NangoConnect } from '@/components/nango-connect'
+import { useSession } from '@/lib/hooks/use-session'
+import { useToast } from "@/components/ui/use-toast"
 
 type Integration = {
   integration_type: string
@@ -51,112 +51,115 @@ const INTEGRATION_DETAILS: Record<string, { icon: JSX.Element; description: stri
 }
 
 export default function ClientDashboard() {
-  const [userIntegrations, setUserIntegrations] = useState<Integration[]>([])
-  const [loading, setLoading] = useState(true)
-  const [sessionToken, setSessionToken] = useState<string>('')
-  const [userId, setUserId] = useState<string>('')
-  const { toast } = useToast()
+  const { session, user, loading } = useSession();
+  const { toast } = useToast();
+  const [connectedIntegrations, setConnectedIntegrations] = useState<string[]>([]);
 
   useEffect(() => {
-    loadUserData()
-  }, [])
+    const loadConnectedIntegrations = async () => {
+      try {
+        const response = await fetch('/api/integrations/connected');
+        if (!response.ok) {
+          throw new Error('Failed to fetch connected integrations');
+        }
+        const data = await response.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        setConnectedIntegrations(data.integrations || []);
+      } catch (error) {
+        console.error('Failed to load connected integrations:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load your connected integrations. Please refresh the page.",
+          variant: "destructive",
+        });
+      }
+    };
 
-  const loadUserData = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-
-      setSessionToken(session.access_token)
-      setUserId(session.user.id)
-
-      // Get user's ID first
-      const { data: userData, error: userError } = await supabase
-        .from('external_users')
-        .select('id')
-        .eq('auth_id', session.user.id)
-        .single()
-
-      if (userError) throw userError
-
-      // Get user's enabled integrations
-      const { data: integrations, error: intError } = await supabase
-        .from('client_integrations')
-        .select('*')
-        .eq('user_id', userData.id)
-        .eq('enabled', true)
-
-      if (intError) throw intError
-
-      setUserIntegrations(integrations || [])
-    } catch (error) {
-      console.error('Error loading integrations:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load your integrations',
-        variant: 'destructive',
-      })
-    } finally {
-      setLoading(false)
+    if (session?.token && user?.id) {
+      loadConnectedIntegrations();
     }
-  }
+  }, [session?.token, user?.id, toast]);
 
   const handleSuccess = (integrationType: string) => {
+    setConnectedIntegrations(prev => [...prev, integrationType]);
     toast({
-      title: 'Success',
-      description: `Successfully connected to ${integrationType}`,
-    })
-  }
+      title: "Integration Connected",
+      description: `Successfully connected to ${integrationType.split('-').join(' ')}.`,
+    });
+  };
 
   const handleError = (integrationType: string, error: Error) => {
     toast({
-      title: 'Error',
-      description: `Failed to connect to ${integrationType}: ${error.message}`,
-      variant: 'destructive',
-    })
-  }
+      title: "Connection Failed",
+      description: `Failed to connect to ${integrationType.split('-').join(' ')}. Please try again.`,
+      variant: "destructive",
+    });
+  };
 
   if (loading) {
-    return <div>Loading...</div>
+    return (
+      <div className="container mx-auto py-6">
+        <div className="animate-pulse">
+          <div className="h-8 w-48 bg-gray-200 rounded mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-lg p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-200 rounded"></div>
+                  <div>
+                    <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                    <div className="h-3 w-16 bg-gray-200 rounded mt-2"></div>
+                  </div>
+                </div>
+                <div className="h-4 w-full bg-gray-200 rounded"></div>
+                <div className="h-9 w-full bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  // Get all available integration types
-  const availableIntegrations = Object.keys(INTEGRATION_DETAILS) as IntegrationType[]
+  if (!session || !user) {
+    return null;
+  }
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-semibold mb-6">Available Integrations</h1>
+    <div className="container mx-auto py-6">
+      <h1 className="text-2xl font-bold mb-6">Available Integrations</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {availableIntegrations.map(integrationType => {
-          const details = INTEGRATION_DETAILS[integrationType]
-          return (
-            <Card key={integrationType} className="bg-white">
-              <CardContent className="p-6 flex flex-col h-full">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="flex-shrink-0">
-                    {details.icon}
-                  </div>
-                  <div>
-                    <h3 className="font-bold capitalize">
-                      {integrationType.split('-').join(' ')}
-                    </h3>
-                    <span className="text-sm text-green-600">Available</span>
-                  </div>
+        {Object.entries(INTEGRATION_DETAILS).map(([integrationType, details]) => (
+          <Card key={integrationType} className="bg-white">
+            <CardContent className="p-6 flex flex-col h-full">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex-shrink-0">
+                  {details.icon}
                 </div>
-                <p className="text-sm text-gray-600 mb-4 flex-grow">{details.description}</p>
-                <div className="mt-auto">
-                  <NangoConnect
-                    integrationType={integrationType}
-                    sessionToken={sessionToken}
-                    userId={userId}
-                    onSuccess={() => handleSuccess(integrationType)}
-                    onError={(error) => handleError(integrationType, error)}
-                  />
+                <div>
+                  <h3 className="font-bold capitalize">
+                    {integrationType.split('-').join(' ')}
+                  </h3>
+                  <span className="text-sm text-green-600">Available</span>
                 </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+              </div>
+              <p className="text-sm text-gray-600 mb-4 flex-grow">{details.description}</p>
+              <div className="mt-auto">
+                <NangoConnect
+                  integrationType={integrationType as any}
+                  sessionToken={session.token}
+                  userId={user.id}
+                  onSuccess={() => handleSuccess(integrationType)}
+                  onError={(error) => handleError(integrationType, error)}
+                  isConnected={connectedIntegrations.includes(integrationType)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
-  )
+  );
 }

@@ -59,7 +59,13 @@ export function Navbar() {
         <div className="navbar-left flex items-center">
           <div>
             <Link href="/">
-              <Image src="/color_logo_no_background.png" alt="Logo" width={35} height={35} />
+              <Image 
+                src="/color_logo_no_background.png" 
+                alt="Logo" 
+                width={25} 
+                height={25} 
+                className="object-contain"
+              />
             </Link>
           </div>
           <div className="ml-2 flex items-center" style={{ alignSelf: 'flex-end' }}>
