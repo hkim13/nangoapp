@@ -79,7 +79,7 @@ export default function UpdatePassword() {
   }
 
   return (
-    <div className="container flex h-screen w-screen flex-col items-center justify-center">
+    <div className="flex items-center justify-center h-screen">
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Update Password</CardTitle>

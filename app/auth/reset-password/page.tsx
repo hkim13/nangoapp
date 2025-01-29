@@ -21,7 +21,7 @@ export default function ResetPassword() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/update-password`,
+        redirectTo: window.location.origin,
       })
 
       if (error) {
@@ -50,7 +50,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="container flex h-screen w-screen flex-col items-center justify-center">
+    <div className="flex items-center justify-center h-screen">
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Reset Password</CardTitle>

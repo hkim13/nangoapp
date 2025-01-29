@@ -87,7 +87,7 @@ export default function Login() {
   }
 
   return (
-    <div className="container flex items-center justify-center min-h-[calc(100vh-4rem)]">
+    <div className="flex items-center justify-center h-screen">
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Login</CardTitle>
