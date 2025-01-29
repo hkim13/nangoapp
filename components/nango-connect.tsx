@@ -4,6 +4,13 @@ import { useState } from 'react';
 import Nango from '@nangohq/frontend';
 import { Nango as NangoNode } from '@nangohq/node';
 import { Button } from '@/components/ui/button';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical, Check } from 'lucide-react';
 
 // Add type definitions for Google Picker data
 interface GooglePickerDocument {
@@ -61,8 +68,11 @@ interface NangoConnectProps {
   sessionToken: string;
   userId: string;
   onSuccess?: (result: { connectionId?: string; fileIds?: string[] }) => void;
+  connectionId?: string;
+  fileIds?: string[];
   onError?: (error: Error) => void;
   onCancel?: () => void;
+  isConnected?: boolean;
 }
 
 async function getNangoAccessToken(connectionId: string, providerConfigKey: string): Promise<string> {
@@ -98,7 +108,8 @@ export function NangoConnect({
   userId, 
   onSuccess, 
   onError,
-  onCancel 
+  onCancel,
+  isConnected = false
 }: NangoConnectProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const integrationConfig = INTEGRATION_CONFIGS[integrationType];
@@ -264,18 +275,45 @@ export function NangoConnect({
         onSuccess?.({ connectionId: result.connectionId });
       }
     } catch (error) {
-      console.error(`[NangoConnect] Failed to initialize ${integrationConfig.name}:`, error);
-      onError?.(error instanceof Error ? error : new Error('Unknown error occurred'));
+      console.error('[NangoConnect] Error:', error);
+      onError?.(error as Error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (isConnected) {
+    return (
+      <div className="flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          className="flex-1 bg-green-50 text-green-600 border-green-200 hover:bg-green-100 hover:text-green-700"
+          disabled
+        >
+          <Check className="w-4 h-4 mr-2" />
+          Connected
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleConnect}>
+              Reconnect
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    );
+  }
+
   return (
-    <Button 
-      onClick={handleConnect} 
+    <Button
+      onClick={handleConnect}
+      className="w-full bg-black hover:bg-gray-900 text-white"
       disabled={isLoading}
-      className="w-full"
     >
       {isLoading ? 'Connecting...' : integrationConfig.buttonText}
     </Button>

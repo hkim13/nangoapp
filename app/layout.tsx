@@ -20,6 +20,21 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Seamless AI",
   description: "Integrate your Airtable data seamlessly",
+  icons: {
+    icon: [
+      {
+        url: "/color_logo_no_background.png",
+        type: "image/png",
+      }
+    ],
+    shortcut: ["/color_logo_no_background.png"],
+    apple: [
+      {
+        url: "/color_logo_no_background.png",
+        type: "image/png",
+      }
+    ],
+  },
 };
 
 export default function RootLayout({
