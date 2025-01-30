@@ -9,11 +9,11 @@ export interface ClientIntegrationConfig {
 export const CLIENT_INTEGRATION_CONFIGS: Record<string, ClientIntegrationConfig> = {
   'default': {
     clientId: 'default',
-    enabledIntegrations: ['airtable']
+    enabledIntegrations: ['airtable', 'quickbooks', 'slack', 'google-drive']
   },
   'premium': {
     clientId: 'premium',
-    enabledIntegrations: ['airtable', 'quickbooks']
+    enabledIntegrations: ['airtable', 'quickbooks', 'slack', 'google-drive']
   }
 };
 

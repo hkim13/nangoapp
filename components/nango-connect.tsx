@@ -37,7 +37,7 @@ declare global {
   }
 }
 
-export type IntegrationType = 'airtable' | 'quickbooks' | 'google-drive';
+export type IntegrationType = 'airtable' | 'quickbooks' | 'google-drive' | 'slack';
 
 interface IntegrationConfig {
   id: string;
@@ -60,6 +60,11 @@ const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
     id: 'google-drive-pc8a',
     name: 'Google Drive',
     buttonText: 'Connect Google Drive'
+  },
+  slack: {
+    id: 'slack',
+    name: 'Slack',
+    buttonText: 'Connect Slack'
   }
 };
 

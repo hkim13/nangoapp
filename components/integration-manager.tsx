@@ -15,6 +15,7 @@ const INTEGRATION_DESCRIPTIONS: Record<IntegrationType, string> = {
   airtable: 'Connect your Airtable account to sync your data',
   quickbooks: 'Connect QuickBooks to manage your financial data',
   'google-drive': 'Connect your Google Drive account to sync your files',
+  slack: 'Connect your Slack workspace to enable messaging and notifications',
 };
 
 export function IntegrationManager({ clientId, userId, sessionToken }: IntegrationManagerProps) {
