@@ -37,7 +37,7 @@ declare global {
   }
 }
 
-export type IntegrationType = 'airtable' | 'quickbooks' | 'google-drive' | 'slack';
+export type IntegrationType = 'airtable' | 'quickbooks' | 'google-drive' | 'slack' | 'youtube' | 'stripe' | 'notion';
 
 interface IntegrationConfig {
   id: string;
@@ -65,6 +65,21 @@ const INTEGRATION_CONFIGS: Record<IntegrationType, IntegrationConfig> = {
     id: 'slack',
     name: 'Slack',
     buttonText: 'Connect Slack'
+  },
+  youtube: {
+    id: 'youtube',
+    name: 'YouTube',
+    buttonText: 'Connect YouTube'
+  },
+  stripe: {
+    id: 'stripe',
+    name: 'Stripe',
+    buttonText: 'Connect Stripe'
+  },
+  notion: {
+    id: 'notion',
+    name: 'Notion',
+    buttonText: 'Connect Notion'
   }
 };
 

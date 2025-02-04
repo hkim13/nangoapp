@@ -13,6 +13,11 @@ import { useEffect } from 'react';
   7. grab the data from google drive, embed it, etc...
 */
 
+interface GooglePickerResponse {
+  action: string;
+  [key: string]: any;
+}
+
 declare global {
   interface Window {
     tokenClient: any;
@@ -21,7 +26,7 @@ declare global {
     onApiLoad: () => void;
     onPickerApiLoad: () => void;
     gisLoaded: () => void;
-    openPicker: (config: any) => void;
+    openPicker: (config: { appId: string; clientId: string; developerKey: string; accessToken: string; callbackFunction: (data: GooglePickerResponse) => void; }) => void;
   }
 }
 
@@ -69,7 +74,7 @@ export function GooglePickerScripts() {
         .setAppId(config.appId)
         .setOAuthToken(config.accessToken)
         .addView(view)
-        .setCallback((data: any) => {
+        .setCallback((data: GooglePickerResponse) => {
           console.log('[GooglePicker] Picker callback data:', data);
           config.callbackFunction(data);
         })
