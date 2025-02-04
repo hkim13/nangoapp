@@ -106,7 +106,7 @@ async function getNangoAccessToken(connectionId: string, providerConfigKey: stri
   
   return data.access_token;
 }
-// testing
+
 export function NangoConnect({ 
   integrationType, 
   sessionToken, 
