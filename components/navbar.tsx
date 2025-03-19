@@ -54,48 +54,50 @@ export function Navbar() {
   }
 
   return (
-    <nav className="border-b">
+    <nav className="border-b border-gray-800 bg-black relative z-50">
       <div className="flex h-16 items-center px-4 container mx-auto">
-        <div className="navbar-left flex items-center">
-          <div>
-            <Link href="/">
-              <Image 
-                src="/color_logo_no_background.png" 
-                alt="Logo" 
-                width={25} 
-                height={25} 
-                className="object-contain"
-              />
-            </Link>
-          </div>
-          <div className="ml-2 flex items-center" style={{ alignSelf: 'flex-end' }}>
-            <Link href="/">
-              <span className="font-semibold text-lg">Seamless AI</span>
-            </Link>
-          </div>
+     
+        
+        <div className="flex items-center gap-2">
+          <Link href="/">
+            <Image 
+              src="/grayscale_transparent_logo.png" 
+              alt="Logo" 
+              width={40} 
+              height={40} 
+              className="object-contain"
+              style={{ 
+                fontFamily: 'var(--font-geist-sans)',
+                fontWeight: 500
+              }}
+            />
+          </Link>
+          <Link href="/">
+            <span className="font-semibold text-xl text-white">Seamless AI</span>
+          </Link>
         </div>
 
-        {/* Main navigation */}
-        <div className="ml-auto flex items-center space-x-4">
+        {/* Right section with navigation links and auth buttons */}
+        <div className="flex-1 flex items-center justify-end space-x-4">
           {!isLoading && (
             <>
               {isAuthenticated ? (
                 <>
                   <Link 
                     href="/dashboard"
-                    className={`text-sm font-medium transition-colors hover:text-primary ${
-                      pathname === '/dashboard' ? 'text-black' : 'text-muted-foreground'
+                    className={`text-sm font-medium transition-colors hover:text-white ${
+                      pathname === '/dashboard' ? 'text-white' : 'text-gray-300'
                     }`}
                   >
                     Dashboard
                   </Link>
-                  <Button variant="outline" onClick={handleSignOut}>
+                  <Button variant="outline" onClick={handleSignOut} className="text-black border-white hover:bg-black hover:text-white">
                     Sign Out
                   </Button>
                 </>
               ) : (
                 <Link href="/auth/login">
-                  <Button>Sign In</Button>
+                  <Button variant="outline" className="text-white border-white hover:bg-white hover:text-black">Sign In</Button>
                 </Link>
               )}
             </>
