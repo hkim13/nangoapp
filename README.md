@@ -105,10 +105,15 @@ The application supports multiple third-party integrations (like Airtable, Quick
          name: 'Airtable',
          buttonText: 'Connect Airtable'
        },
-       quickbooks: {
-         id: 'quickbooks',
-         name: 'QuickBooks',
-         buttonText: 'Connect QuickBooks'
+       'google-drive': {
+         id: 'google-drive-pc8a',
+         name: 'Google Drive',
+         buttonText: 'Connect Google Drive'
+       },
+       slack: {
+         id: 'slack',
+         name: 'Slack',
+         buttonText: 'Connect Slack'
        }
      };
      ```
@@ -133,11 +138,11 @@ The application supports multiple third-party integrations (like Airtable, Quick
      const CLIENT_INTEGRATION_CONFIGS = {
        'default': {
          clientId: 'default',
-         enabledIntegrations: ['airtable']
+         enabledIntegrations: ['airtable', 'slack', 'google-drive']
        },
        'premium': {
          clientId: 'premium',
-         enabledIntegrations: ['airtable', 'quickbooks']
+         enabledIntegrations: ['airtable', 'slack', 'google-drive']
        }
      };
      ```
@@ -148,7 +153,7 @@ To add a new integration type:
 
 1. Update `IntegrationType` in `components/nango-connect.tsx`:
    ```typescript
-   export type IntegrationType = 'airtable' | 'quickbooks' | 'your_new_integration';
+   export type IntegrationType = 'airtable' | 'google-drive' | 'slack' | 'your_new_integration';
    ```
 
 2. Add integration config in `components/nango-connect.tsx`:
@@ -176,7 +181,7 @@ To add a new integration type:
    const CLIENT_INTEGRATION_CONFIGS = {
      'premium': {
        clientId: 'premium',
-       enabledIntegrations: ['airtable', 'quickbooks', 'your_new_integration']
+       enabledIntegrations: ['airtable', 'google-drive', 'slack', 'your_new_integration']
      }
    };
    ```
@@ -188,9 +193,13 @@ Current supported integrations:
   - Syncs data from Airtable bases
   - Used for data management and synchronization
 
-- **QuickBooks** (`quickbooks`)
-  - Manages financial data and transactions
-  - Available in premium client configuration
+- **Google Drive** (`google-drive-pc8a`)
+  - Manages files and documents from Google Drive
+  - Enables document syncing and collaboration
+
+- **Slack** (`slack`)
+  - Connects to Slack workspaces
+  - Enables messaging and notifications
 
 ## Getting Started
 

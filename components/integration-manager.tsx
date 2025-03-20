@@ -13,12 +13,8 @@ interface IntegrationManagerProps {
 
 const INTEGRATION_DESCRIPTIONS: Record<IntegrationType, string> = {
   airtable: 'Connect your Airtable account to sync your data',
-  quickbooks: 'Connect QuickBooks to manage your financial data',
   'google-drive': 'Connect your Google Drive account to sync your files',
-  slack: 'Connect your Slack workspace to enable messaging and notifications',
-  youtube: 'Connect your YouTube account to manage your videos and channel analytics.',
-  stripe: 'Connect your Stripe account to manage payments and transactions',
-  notion: 'Connect your Notion workspace to sync and manage your documents'
+  slack: 'Connect your Slack workspace to enable messaging and notifications'
 };
 
 export function IntegrationManager({ clientId, userId, sessionToken }: IntegrationManagerProps) {

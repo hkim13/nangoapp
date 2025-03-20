@@ -39,15 +39,6 @@ const INTEGRATION_DETAILS: Record<string, { icon: JSX.Element; description: stri
     ),
     description: 'Integrate with Airtable to sync and manage your data.'
   },
-  'quickbooks': {
-    icon: (
-      <svg viewBox="0 0 128 128" className="w-10 h-10">
-        <path d="M64 128c35.346 0 64-28.654 64-64S99.346 0 64 0 0 28.654 0 64s28.654 64 64 64z" fill="#2ca01c"/>
-        <path d="M17.778 64a24.889 24.889 0 0 0 24.889 24.889h3.555v-9.245h-3.555a15.645 15.645 0 1 1 0-31.289H51.2v48.356a9.248 9.248 0 0 0 9.244 9.245V39.111H42.667A24.889 24.889 0 0 0 17.777 64zm67.555-24.889h-3.555v9.245h3.555a15.645 15.645 0 0 1 0 31.288H76.8V31.29a9.244 9.244 0 0 0-9.244-9.245V88.89h17.777a24.888 24.888 0 0 0 0-49.778z" fill="#fff"/>
-      </svg>
-    ),
-    description: 'Connect to QuickBooks for financial management and accounting.'
-  },
   'slack': {
     icon: (
       <svg viewBox="0 0 128 128" className="w-10 h-10">
@@ -58,31 +49,6 @@ const INTEGRATION_DETAILS: Record<string, { icon: JSX.Element; description: stri
       </svg>
     ),
     description: 'Connect your Slack workspace to enable messaging and notifications.'
-  },
-  'youtube': {
-    icon: (
-      <svg viewBox="0 0 159 110" className="w-10 h-10">
-        <path d="M154.4 17.5c-1.8-6.7-7.1-12-13.9-13.8C128.2.4 79.1.4 79.1.4S30 .5 17.7 3.7C10.9 5.5 5.6 10.8 3.8 17.5 .6 29.7.6 55.3.6 55.3s0 25.6 3.2 37.8C5.6 99.8 10.9 105.1 17.7 106.9c12.3 3.3 61.4 3.3 61.4 3.3s49.1 0 61.4-3.3c6.8-1.8 12.1-7.1 13.9-13.8 3.2-12.2 3.2-37.8 3.2-37.8s0-25.6-3.2-37.8" fill="#FF0000"/>
-        <path d="M63.9 79.2V31.4L103.2 55.3 63.9 79.2z" fill="#FFFFFF"/>
-      </svg>
-    ),
-    description: 'Connect your YouTube account to manage your videos and channel analytics.'
-  },
-  'stripe': {
-    icon: (
-      <svg viewBox="0 0 24 24" className="w-10 h-10" fill="currentColor">
-        <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/>
-      </svg>
-    ),
-    description: 'Connect your Stripe account to manage payments and transactions.'
-  },
-  'notion': {
-    icon: (
-      <svg viewBox="0 0 24 24" className="w-10 h-10" fill="currentColor">
-        <path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z"/>
-      </svg>
-    ),
-    description: 'Connect your Notion workspace to sync and manage your documents.'
   }
 }
 
@@ -194,7 +160,7 @@ export default function ClientDashboard() {
               <p className="text-sm text-gray-600 mb-4 flex-grow">{details.description}</p>
               <div className="mt-auto">
                 <NangoConnect
-                  integrationType={integrationType as any}
+                  integrationType={integrationType as 'airtable' | 'google-drive' | 'slack'}
                   sessionToken={session.token}
                   userId={user.id}
                   onSuccess={() => handleSuccess(integrationType)}
