@@ -30,7 +30,11 @@ export async function POST(request: Request) {
     // Send document content to N8N webhook if available
     if (fileResult.base64Content) {
         try {
-            const n8nWebhookUrl = 'https://teezworkspace.app.n8n.cloud/webhook/f36e10c8-ffa4-4d66-b28a-c8a900236201';
+            const n8nWebhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
+            if (!n8nWebhookUrl) {
+                console.error('N8N webhook URL is not defined in environment variables');
+                throw new Error('Missing webhook configuration');
+            }
             
             const n8nResponse = await fetch(n8nWebhookUrl, {
                 method: 'POST',
