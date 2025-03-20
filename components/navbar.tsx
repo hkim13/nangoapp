@@ -8,20 +8,39 @@ import { supabase, sessionManager } from '@/lib/supabase'
 import Image from 'next/image'
 
 export function Navbar() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [authState, setAuthState] = useState<{
+    isAuthenticated: boolean;
+    isLoading: boolean;
+    error: string | null;
+  }>({
+    isAuthenticated: false,
+    isLoading: true,
+    error: null
+  })
   const pathname = usePathname()
   const router = useRouter()
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
-        setIsAuthenticated(!!user)
+        const { data: { user }, error } = await supabase.auth.getUser()
+        
+        if (error) {
+          throw error
+        }
+        
+        setAuthState({
+          isAuthenticated: !!user,
+          isLoading: false,
+          error: null
+        })
       } catch (error) {
         console.error('Error checking auth status:', error)
-      } finally {
-        setIsLoading(false)
+        setAuthState({
+          isAuthenticated: false,
+          isLoading: false,
+          error: error instanceof Error ? error.message : 'Authentication check failed'
+        })
       }
     }
 
@@ -29,7 +48,11 @@ export function Navbar() {
 
     // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session)
+      setAuthState(prev => ({
+        ...prev,
+        isAuthenticated: !!session,
+        isLoading: false
+      }))
     })
 
     return () => {
@@ -39,65 +62,95 @@ export function Navbar() {
 
   const handleSignOut = async () => {
     try {
-      console.log('Starting sign out process...')
-      const { data: { user } } = await supabase.auth.getUser()
+      setAuthState(prev => ({ ...prev, isLoading: true }))
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError) {
+        throw userError
+      }
+      
       if (user) {
-        console.log('Deleting user sessions...')
         await sessionManager.deleteAllUserSessions(user.id)
       }
-      console.log('Signing out from Supabase...')
-      await supabase.auth.signOut()
+      
+      const { error: signOutError } = await supabase.auth.signOut()
+      
+      if (signOutError) {
+        throw signOutError
+      }
+      
+      setAuthState({
+        isAuthenticated: false,
+        isLoading: false,
+        error: null
+      })
+      
       router.push('/auth/login')
     } catch (error) {
       console.error('Error signing out:', error)
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Sign out failed'
+      }))
     }
   }
 
+  const { isAuthenticated, isLoading, error } = authState
+
   return (
     <nav className="border-b border-gray-800 bg-black relative z-50">
-      <div className="flex h-16 items-center px-4 container mx-auto">
-     
-        
+      <div className="flex h-16 items-center justify-between px-4 container mx-auto">
+        {/* Logo and brand name */}
         <div className="flex items-center gap-2">
-          <Link href="/">
+          <Link href="/" className="flex items-center gap-2">
             <Image 
               src="/grayscale_transparent_logo.png" 
-              alt="Logo" 
+              alt="Seamless AI Logo" 
               width={40} 
               height={40} 
               className="object-contain"
-              style={{ 
-                fontFamily: 'var(--font-geist-sans)',
-                fontWeight: 500
-              }}
+              priority
             />
-          </Link>
-          <Link href="/">
             <span className="font-semibold text-xl text-white">Seamless AI</span>
           </Link>
         </div>
 
-        {/* Right section with navigation links and auth buttons */}
-        <div className="flex-1 flex items-center justify-end space-x-4">
-          {!isLoading && (
+        {/* Navigation links and auth buttons */}
+        <div className="flex items-center space-x-4">
+      
+          {isLoading ? (
+            <div className="h-10 w-16 bg-gray-700 animate-pulse rounded-md"></div>
+          ) : (
             <>
               {isAuthenticated ? (
                 <>
                   <Link 
                     href="/dashboard"
-                    className={`text-sm font-medium transition-colors hover:text-white ${
-                      pathname === '/dashboard' ? 'text-white' : 'text-gray-300'
+                    className={`text-sm font-medium transition-colors hover:text-gray-300 ${
+                      pathname.startsWith('/dashboard') ? 'text-white' : 'text-gray-300'
                     }`}
                   >
                     Dashboard
                   </Link>
-                  <Button variant="outline" onClick={handleSignOut} className="text-black border-white hover:bg-black hover:text-white">
-                    Sign Out
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSignOut}
+                    disabled={isLoading}
+                    className="text-black border-white border hover:text-white hover:bg-white/10"
+                  >
+                    {isLoading ? 'Signing out...' : 'Sign Out'}
                   </Button>
                 </>
               ) : (
                 <Link href="/auth/login">
-                  <Button variant="outline" className="text-white border-white hover:bg-white hover:text-black">Sign In</Button>
+                  <Button 
+                    variant="outline" 
+                    className="text-black border-white border hover:text-white hover:bg-white/10"
+                  >
+                    Sign In
+                  </Button>
                 </Link>
               )}
             </>
