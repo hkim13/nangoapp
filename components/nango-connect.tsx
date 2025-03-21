@@ -217,26 +217,34 @@ export function NangoConnect({
                       const successfulFiles = processedFiles.filter((file): file is NonNullable<typeof file> => file !== null);
 
                       if (successfulFiles.length > 0) {
-                        // Send all files together to N8N in a single webhook
-                        const n8nWebhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
-                        if (!n8nWebhookUrl) {
-                          console.error('N8N webhook URL is not defined in environment variables');
-                          throw new Error('Missing webhook configuration');
-                        }
-                        const n8nResponse = await fetch(n8nWebhookUrl, {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({
-                            files: successfulFiles,
-                            batchTimestamp: new Date().toISOString(),
-                            totalFiles: successfulFiles.length
-                          })
-                        });
+                        // Send all files together to N8N through our server-side proxy
+                        try {
+                          const proxyResponse = await fetch('/api/webhooks/n8n-proxy', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              target: 'google-drive',
+                              payload: {
+                                files: successfulFiles,
+                                batchTimestamp: new Date().toISOString(),
+                                totalFiles: successfulFiles.length
+                              }
+                            })
+                          });
 
-                        if (!n8nResponse.ok) {
-                          throw new Error('Failed to send files to N8N');
+                          if (!proxyResponse.ok) {
+                            const errorData = await proxyResponse.text();
+                            console.error('[NangoConnect] Failed to send files to N8N through proxy:', errorData);
+                            throw new Error('Failed to send files to N8N');
+                          }
+
+                          const proxyResult = await proxyResponse.json();
+                          console.log('[NangoConnect] Successfully sent files to N8N through proxy:', proxyResult);
+                        } catch (error) {
+                          console.error('[NangoConnect] Error sending files to N8N:', error);
+                          throw error;
                         }
 
                         console.log('[NangoConnect] Successfully sent all files to N8N:', {

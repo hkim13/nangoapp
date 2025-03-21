@@ -30,25 +30,30 @@ export async function POST(request: Request) {
     // Send document content to N8N webhook if available
     if (fileResult.base64Content) {
         try {
-            const n8nWebhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
+            // Create payload for n8n
+            const payload = {
+                documentContent: fileResult.base64Content,
+                fileId,
+                fileName: fileResult.name,
+                mimeType: fileResult.mimeType,
+                timestamp: new Date().toISOString(),
+                isBase64: true
+            };
+            
+            // Send directly to n8n (server-side, so no CORS issues)
+            const n8nWebhookUrl = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_WEBHOOK_URL;
             if (!n8nWebhookUrl) {
-                console.error('N8N webhook URL is not defined in environment variables');
-                throw new Error('Missing webhook configuration');
+                console.error('Google Drive webhook URL is not defined in environment variables');
+                throw new Error('Missing webhook configuration for Google Drive');
             }
             
+            console.log('Sending document to n8n webhook');
             const n8nResponse = await fetch(n8nWebhookUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    documentContent: fileResult.base64Content,
-                    fileId,
-                    fileName: fileResult.name,
-                    mimeType: fileResult.mimeType,
-                    timestamp: new Date().toISOString(),
-                    isBase64: true
-                })
+                body: JSON.stringify(payload)
             });
             
             if (!n8nResponse.ok) {
