@@ -8,7 +8,7 @@ const navigation = {
     { name: 'Privacy Policy', href: '/privacy' },
   ],
   social: [
-    { name: 'Twitter', href: 'https://twitter.com' },
+    { name: 'Skool', href: 'https://www.skool.com/seamless-8336' },
   ],
 };
 
