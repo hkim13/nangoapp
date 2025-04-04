@@ -1,229 +1,72 @@
-# Seamless AI Integration
+# Seamless AI Integration Platform
 
-A web application that integrates Nango for managing authentication and external API connections while using Supabase for user login and session management.
+> ⚠️ **Note**: This project is being prepared for public release. Some cleanup and simplification is required before production use.
 
-## Project Overview
+A modern web application that seamlessly connects various SaaS platforms using Next.js, Supabase, and Nango. Currently supports integrations with Google Drive, Airtable, and Slack, with an extensible architecture for adding more integrations.
 
-This project uses:
-- [Next.js](https://nextjs.org) for the web framework
-- [Supabase](https://supabase.com) for authentication and database
-- [Nango](https://nango.dev) for OAuth integrations
-- [n8n](https://n8n.io) for workflow automation
+## 🚀 Features
 
-## Implementation Steps
+- **Authentication & Session Management**: Secure user authentication via Supabase
+- **OAuth Integrations**: Easy connection to third-party services using Nango
+- **File Processing**: Automated file handling with Google Drive integration
+- **Workflow Automation**: n8n integration for automated workflows
+- **Modern UI**: Clean, responsive interface built with Tailwind CSS
 
-### Step 1: Authentication and Session Management 
+## ⚠️ Pre-Release Cleanup Required
 
-#### 1.1 Supabase Login Configuration
-- Implemented user authentication using Supabase Auth
-- Created custom session management system with the following features:
-  - JWT-based authentication with 1-hour expiration
-  - Custom session tracking with 24-hour expiration
-  - Automatic session validation and cleanup
-  - Row Level Security (RLS) policies for secure data access
+Before using this in production, please note the following areas that need attention:
 
-**Key Components:**
-1. **Database Schema**
-   - Created `user_sessions` table with fields:
-     - `id`: UUID (Primary Key)
-     - `userId`: UUID (References auth.users)
-     - `sessionId`: UUID (Unique identifier)
-     - `lastActive`: Timestamp
-     - `expiresAt`: Timestamp
-     - `metadata`: JSONB
-     - `createdAt`: Timestamp
-     - `updatedAt`: Timestamp
+1. **User Types Simplification**
+   - Current implementation includes multiple user types (client/premium/free)
+   - Needs to be simplified to a single user type for public release
+   - Affected files:
+     - `supabase/migrations/20250116_02_user_management.sql`
+     - `app/dashboard/(external-users)/*`
+     - `lib/integration-config.ts`
 
-2. **Session Management**
-   - Location: `lib/supabase.ts`
-   - Functions:
-     - `createSession`: Creates new session with 24-hour expiration
-     - `getSession`: Retrieves and validates session
-     - `updateSessionActivity`: Updates last active timestamp
-     - `deleteSession`: Removes specific session
-     - `deleteAllUserSessions`: Cleans up all user sessions
+2. **Supabase Configuration**
+   - Current setup includes complex RLS policies for multiple user types
+   - Needs streamlining for simpler deployment
+   - Review `supabase/migrations/` for necessary adjustments
 
-3. **Security Features**
-   - **Dual-Layer Session Management**:
-     - Primary Layer: Supabase JWT (1-hour expiration)
-       - Located in Supabase authentication system
-       - Automatically refreshed by Supabase
-       - Handles core authentication
-       - Can be monitored in Supabase Auth dashboard
-     
-     - Secondary Layer: Custom Sessions (24-hour expiration)
-       - Stored in `user_sessions` table
-       - Expiration time can be modified in `lib/supabase.ts`:
-         ```typescript
-         // In createSession function
-         const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000)
-         ```
-       - Used for additional session tracking and Nango integration
-     
-     - Session Synchronization:
-       - Both layers must be valid for user access
-       - Custom session stores JWT reference in metadata
-       - Invalid JWT automatically invalidates custom session
-       - Session checks occur on every protected route
+## 🛠️ Setup Instructions
 
-   - **Row Level Security (RLS)**:
-     - Users can only access their own sessions
-     - Policies automatically enforce data isolation
-     - SQL policies defined in `supabase/migrations/20250109_create_session_tables.sql`
+### Prerequisites
 
-   - **Automatic Cleanup**:
-     - Expired sessions automatically removed
-     - Cleanup triggered on session validation
-     - Manual cleanup function available: `cleanup_expired_sessions()`
+- Node.js 18.x or higher
+- npm or yarn
+- Supabase account
+- Nango account
+- n8n instance (for workflow automation)
 
-   - **Security Best Practices**:
-     - No sensitive data stored in session metadata
-     - All database queries use parameterized values
-     - Session IDs use cryptographically secure UUIDs
-     - Automatic logout on session expiration
+### Environment Variables
 
-4. **UI Components**
-   - Enhanced login page with proper error handling and loading states
-   - Dashboard with session verification
-   - Automatic redirect for unauthenticated users
-
-### Step 2: Integration Management
-
-The application supports multiple third-party integrations (like Airtable, QuickBooks) with a flexible system that can be configured per client.
-
-#### 2.1 Integration Architecture
-
-**Key Components:**
-1. **NangoConnect Component** (`components/nango-connect.tsx`)
-   - Base component for handling Nango OAuth connections
-   - Supports multiple integration types
-   - Configuration for each integration type:
-     ```typescript
-     const INTEGRATION_CONFIGS = {
-       airtable: {
-         id: 'airtable-gcm8',
-         name: 'Airtable',
-         buttonText: 'Connect Airtable'
-       },
-       'google-drive': {
-         id: 'google-drive-pc8a',
-         name: 'Google Drive',
-         buttonText: 'Connect Google Drive'
-       },
-       slack: {
-         id: 'slack',
-         name: 'Slack',
-         buttonText: 'Connect Slack'
-       }
-     };
-     ```
-
-2. **Integration Manager** (`components/integration-manager.tsx`)
-   - Manages multiple integration buttons
-   - Handles success/error states for each integration
-   - Provides consistent UI across all integrations
-   - Usage example:
-     ```typescript
-     <IntegrationManager
-       clientId="premium"  // Determines available integrations
-       userId={user.id}
-       sessionToken={user.id}
-     />
-     ```
-
-3. **Client Integration Config** (`lib/integration-config.ts`)
-   - Defines which integrations are available for each client type
-   - Example configuration:
-     ```typescript
-     const CLIENT_INTEGRATION_CONFIGS = {
-       'default': {
-         clientId: 'default',
-         enabledIntegrations: ['airtable', 'slack', 'google-drive']
-       },
-       'premium': {
-         clientId: 'premium',
-         enabledIntegrations: ['airtable', 'slack', 'google-drive']
-       }
-     };
-     ```
-
-#### 2.2 Adding New Integrations
-
-To add a new integration type:
-
-1. Update `IntegrationType` in `components/nango-connect.tsx`:
-   ```typescript
-   export type IntegrationType = 'airtable' | 'google-drive' | 'slack' | 'your_new_integration';
-   ```
-
-2. Add integration config in `components/nango-connect.tsx`:
-   ```typescript
-   const INTEGRATION_CONFIGS = {
-     // ... existing configs ...
-     your_new_integration: {
-       id: 'your-nango-integration-id',
-       name: 'Your Integration Name',
-       buttonText: 'Connect to Service'
-     }
-   };
-   ```
-
-3. Add description in `components/integration-manager.tsx`:
-   ```typescript
-   const INTEGRATION_DESCRIPTIONS = {
-     // ... existing descriptions ...
-     your_new_integration: 'Description of your integration'
-   };
-   ```
-
-4. Update client configurations in `lib/integration-config.ts`:
-   ```typescript
-   const CLIENT_INTEGRATION_CONFIGS = {
-     'premium': {
-       clientId: 'premium',
-       enabledIntegrations: ['airtable', 'google-drive', 'slack', 'your_new_integration']
-     }
-   };
-   ```
-
-#### 2.3 Integration Types
-
-Current supported integrations:
-- **Airtable** (`airtable-gcm8`)
-  - Syncs data from Airtable bases
-  - Used for data management and synchronization
-
-- **Google Drive** (`google-drive-pc8a`)
-  - Manages files and documents from Google Drive
-  - Enables document syncing and collaboration
-
-- **Slack** (`slack`)
-  - Connects to Slack workspaces
-  - Enables messaging and notifications
-
-## Getting Started
-
-First, run the development server:
+Create a `.env.local` file with the following:
 
 ```bash
-npm run dev
-# or
-yarn dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## Environment Setup
-
-Create a `.env.local` file with the following variables:
-```env
+# Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Nango Configuration
+NEXT_PUBLIC_NANGO_PUBLIC_KEY=your_nango_public_key
+NEXT_PUBLIC_NANGO_HOST=https://api.nango.dev
+NANGO_SECRET_KEY=your_nango_secret_key
+
+# Google Drive Integration
+NEXT_PUBLIC_GOOGLE_APP_ID=your_google_app_id
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+NEXT_PUBLIC_GOOGLE_PICKER_API_KEY=your_google_picker_api_key
+
+# n8n Webhook URLs
+NEXT_PUBLIC_N8N_WEBHOOK_URL=your_n8n_webhook_url
+NEXT_PUBLIC_GOOGLE_DRIVE_WEBHOOK_URL=your_google_drive_webhook_url
 ```
 
-## Database Setup
+### Database Setup
 
-Run the following SQL in your Supabase SQL Editor to set up the required tables:
+1. Create a new Supabase project
+2. Run the following base schema (simplified version):
 
 ```sql
 -- Create user_sessions table
@@ -238,18 +81,78 @@ CREATE TABLE user_sessions (
     "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
--- Add necessary indexes and RLS policies
--- (See full SQL in /supabase/migrations/20250109_create_session_tables.sql)
+-- Add RLS policies
+ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can only access their own sessions"
+    ON user_sessions
+    FOR ALL
+    USING ("userId" = auth.uid());
 ```
 
-## Next Steps
-- [ ] Step 1.2: Session Handling with Nango
-- [ ] Step 3: Fetch Data from External APIs
-- [ ] Step 4: Display Data in Frontend
-- [ ] Step 5: Workflow Integration with n8n
+### Installation
 
-## Learn More
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/seamless-ai.git
 
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Supabase Documentation](https://supabase.com/docs)
-- [Nango Documentation](https://docs.nango.dev)
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+```
+
+## 🔌 Supported Integrations
+
+Currently supports:
+- **Google Drive**: Document management and processing
+- **Airtable**: Data synchronization
+- **Slack**: Communication integration
+
+Each integration uses Nango for OAuth handling and n8n for workflow automation.
+
+## 🏗️ Architecture
+
+### Key Components
+
+1. **Authentication Flow**
+   - Supabase handles user authentication
+   - Custom session management with 24-hour expiration
+   - JWT-based authentication with automatic refresh
+
+2. **Integration Management**
+   - Nango handles OAuth connections
+   - Centralized integration configuration
+   - Extensible integration system
+
+3. **File Processing**
+   - Google Drive Picker integration
+   - Server-side file processing
+   - n8n webhook integration for automation
+
+## 🚧 Known Issues and Limitations
+
+1. **User Type System**
+   - Currently implements a complex multi-tier user system
+   - Will be simplified to single user type in future release
+
+2. **Integration Permissions**
+   - Integration access is tied to user types
+   - Needs refactoring for simpler permission model
+
+3. **Session Management**
+   - Complex dual-layer session system
+   - May be simplified in future releases
+
+## 📝 Contributing
+
+This project is being prepared for public release. Contributions will be welcome after initial cleanup is complete.
+
+## 📄 License
+
+MIT License - See LICENSE file for details
+
+---
+
+> 🔍 **Note**: This is a pre-release version. Please ensure you understand the cleanup requirements before deploying to production.
